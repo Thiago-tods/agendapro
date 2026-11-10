@@ -110,8 +110,19 @@ class Appointment extends Model
     public function scopeOccupyingBetween(Builder $query, CarbonImmutable $from, CarbonImmutable $until): void
     {
         $query->whereIn('status', AppointmentStatus::occupyingValues())
-            ->where('starts_at', '<', $until)
-            ->where('occupied_until', '>', $from);
+            ->where('starts_at', '<', $until->utc())
+            ->where('occupied_until', '>', $from->utc());
+    }
+
+    /**
+     * Appointments starting in [from, until).
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeStartingBetween(Builder $query, CarbonImmutable $from, CarbonImmutable $until): void
+    {
+        // Always compare in UTC: Eloquent serializes dates without an offset.
+        $query->where('appointments.starts_at', '>=', $from->utc())->where('appointments.starts_at', '<', $until->utc());
     }
 
     public function delete(): never

@@ -6,8 +6,10 @@ const model = defineModel<string>({ default: '' })
 const props = withDefaults(
   defineProps<{
     label: string
-    type?: 'text' | 'email' | 'password' | 'tel' | 'search' | 'number' | 'url'
+    type?: 'text' | 'email' | 'password' | 'tel' | 'search' | 'number' | 'url' | 'date' | 'time'
     placeholder?: string
+    min?: string
+    step?: number
     hint?: string
     error?: string
     success?: string
@@ -49,6 +51,8 @@ const state = computed(() => (props.error ? 'error' : props.success ? 'success' 
         v-model="model"
         :type="type"
         :placeholder="placeholder"
+        :min="min"
+        :step="step"
         :disabled="disabled"
         :required="required"
         :autocomplete="autocomplete"

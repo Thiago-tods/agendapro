@@ -27,7 +27,7 @@ const groups = computed<NavItem[][]>(() => {
   const params = { companyId: companyId.value ?? '' }
 
   return [
-    [{ label: 'Início', icon: ICONS.home, to: { name: 'company-home', params } }, ...upcomingNav],
+    [{ label: 'Painel', icon: ICONS.home, to: { name: 'company-home', params } }, ...upcomingNav],
     [{ label: 'Configurações', icon: ICONS.settings, to: { name: 'company-settings', params } }],
   ]
 })

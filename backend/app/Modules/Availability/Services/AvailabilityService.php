@@ -85,8 +85,8 @@ class AvailabilityService
         $blocked = BlockedPeriod::query()
             ->where('company_id', $company->id)
             ->where(fn ($q) => $q->whereNull('professional_id')->orWhere('professional_id', $professional->id))
-            ->where('starts_at', '<', $until)
-            ->where('ends_at', '>', $from)
+            ->where('starts_at', '<', $until->utc())
+            ->where('ends_at', '>', $from->utc())
             ->exists();
 
         if ($blocked) {

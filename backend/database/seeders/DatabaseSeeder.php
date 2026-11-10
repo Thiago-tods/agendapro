@@ -35,6 +35,8 @@ class DatabaseSeeder extends Seeder
             ['user_id' => $professional->id, 'role' => CompanyRole::Professional],
         ]);
 
+        $this->callWith(DemoScheduleSeeder::class, ['company' => $studio, 'actor' => $receptionist]);
+
         $clinic = Company::factory()->create(['name' => 'Clínica Horizonte', 'slug' => 'clinica-horizonte']);
         $clinic->members()->createMany([
             ['user_id' => $outsider->id, 'role' => CompanyRole::Owner],

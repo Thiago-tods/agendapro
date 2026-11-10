@@ -26,6 +26,7 @@ function company(id: string, manageCompany: boolean): Company {
         manage_availability: manageCompany,
         manage_appointments: manageCompany,
         delete_records: manageCompany,
+        view_financials: manageCompany,
       },
     },
   }

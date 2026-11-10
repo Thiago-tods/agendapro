@@ -6,6 +6,7 @@ use App\Modules\Availability\Http\Controllers\AvailabilityController;
 use App\Modules\Companies\Http\Controllers\CompanyController;
 use App\Modules\Companies\Http\Controllers\CompanyMemberController;
 use App\Modules\Customers\Http\Controllers\CustomerController;
+use App\Modules\Dashboard\Http\Controllers\DashboardController;
 use App\Modules\Professionals\Http\Controllers\ProfessionalController;
 use App\Modules\Services\Http\Controllers\ServiceController;
 use App\Modules\System\Http\Controllers\HealthController;
@@ -43,6 +44,8 @@ Route::middleware('auth:sanctum')->name('api.v1.')->group(function (): void {
 
             Route::apiResource('professionals', ProfessionalController::class);
             Route::apiResource('services', ServiceController::class);
+
+            Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
             // Availability
             Route::controller(AvailabilityController::class)->group(function (): void {

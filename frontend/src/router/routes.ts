@@ -43,8 +43,8 @@ export const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'company-home',
-        component: () => import('@/modules/companies/views/CompanyHomeView.vue'),
-        meta: { title: 'Início' },
+        component: () => import('@/modules/dashboard/views/DashboardView.vue'),
+        meta: { title: 'Painel' },
       },
       {
         path: 'configuracoes/empresa',

@@ -39,7 +39,14 @@ enum CompanyRole: string
             'manage_availability' => $this->canManageAvailability(),
             'manage_appointments' => $this->canManageAppointments(),
             'delete_records' => $this->canDeleteRecords(),
+            'view_financials' => $this->canViewFinancials(),
         ];
+    }
+
+    /** See revenue and other monetary indicators. */
+    public function canViewFinancials(): bool
+    {
+        return in_array($this, [self::Owner, self::Admin], true);
     }
 
     /** Edit company information and settings. */

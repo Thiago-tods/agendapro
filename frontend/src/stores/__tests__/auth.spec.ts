@@ -27,6 +27,7 @@ const session: SessionPayload = {
           manage_availability: true,
           manage_appointments: true,
           delete_records: true,
+          view_financials: true,
         },
       },
     },
