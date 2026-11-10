@@ -57,7 +57,7 @@ Dados fictícios gerados pelo seeder de demonstração.
 | Camada | Tecnologias |
 |---|---|
 | Backend | PHP 8.4, Laravel 13, Laravel Sanctum (sessão por cookie para SPA), PHPUnit |
-| Banco | PostgreSQL 18 (extensão `btree_gist`) |
+| Banco | PostgreSQL 18 (extensões `btree_gist` e `pg_trgm`) |
 | Frontend | Vue 3, TypeScript, Vite, Vue Router, Pinia, Tailwind CSS 4, Vitest |
 
 ## Arquitetura
@@ -82,7 +82,7 @@ frontend/   SPA Vue, também organizada por módulos
 
 - PHP 8.4 com as extensões `pdo_pgsql`, `mbstring`, `openssl`, `intl`
 - Composer 2
-- PostgreSQL 18, com permissão para criar a extensão `btree_gist`
+- PostgreSQL 18, com as extensões `btree_gist` e `pg_trgm` (distribuídas no pacote `contrib` padrão)
 - Node.js `^22.18` ou `>=24.12`, com npm
 
 ## Configuração do banco
@@ -94,7 +94,7 @@ CREATE DATABASE agendapro;
 CREATE DATABASE agendapro_test;
 ```
 
-A extensão `btree_gist` é criada pelas migrations; o usuário do banco precisa ter permissão para isso.
+As extensões `btree_gist` (proteção contra conflito de horários) e `pg_trgm` (índices de busca) precisam estar disponíveis no servidor. As migrations executam `CREATE EXTENSION IF NOT EXISTS` para ambas, então basta o usuário do banco ter permissão para criá-las; em serviços gerenciados sem essa permissão, crie-as antes com `CREATE EXTENSION btree_gist; CREATE EXTENSION pg_trgm;` no banco de desenvolvimento e no de testes.
 
 ## Executando
 
@@ -142,12 +142,13 @@ vendor/bin/pint --test        # estilo do código
 # Frontend
 cd frontend
 npx vitest run
+npm run lint                  # ESLint
 npm run build                 # type-check e build de produção
 ```
 
 ## Limitações conhecidas
 
-- Sem testes E2E com Playwright, e sem ESLint ou Prettier configurados no frontend.
+- Sem testes E2E com Playwright. O Prettier está configurado (`npm run format`), mas o código existente ainda não foi reformatado.
 - Exceções por data e bloqueios de horário existem na API, mas ainda não têm tela.
 - Sem envio de e-mail:
   - Membros novos recebem uma senha inicial definida pelo administrador, sem troca obrigatória no primeiro acesso.
@@ -159,4 +160,4 @@ npm run build                 # type-check e build de produção
 
 ## Licença
 
-Ainda não definida.
+[MIT](LICENSE) © 2026 Thiago Oliveira da Silva.
