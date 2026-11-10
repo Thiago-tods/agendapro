@@ -30,15 +30,27 @@ Negócios de serviços costumam controlar a agenda em planilhas, cadernos ou men
 
 ## Capturas de tela
 
-<!-- Adicione capturas reais em docs/screenshots/ e substitua os itens abaixo. -->
+Dados fictícios gerados pelo seeder de demonstração.
 
-| Tela | Captura |
-|---|---|
-| Painel | _a adicionar: `docs/screenshots/painel.png`_ |
-| Agenda (semana) | _a adicionar: `docs/screenshots/agenda-semana.png`_ |
-| Detalhes do agendamento | _a adicionar: `docs/screenshots/agendamento.png`_ |
-| Clientes | _a adicionar: `docs/screenshots/clientes.png`_ |
-| Mobile (agenda do dia) | _a adicionar: `docs/screenshots/mobile-agenda.png`_ |
+**Painel**: indicadores do dia, próximos agendamentos e visão dos últimos 30 dias.
+
+![Painel](docs/screenshots/painel.png)
+
+**Agenda semanal** filtrada por profissional, com expediente, intervalos e status.
+
+![Agenda semanal](docs/screenshots/agenda-semana.png)
+
+**Detalhes do agendamento**: ações permitidas no momento e histórico.
+
+![Detalhes do agendamento](docs/screenshots/agendamento.png)
+
+**Clientes**: busca, visitas, última visita e próximo horário.
+
+![Clientes](docs/screenshots/clientes.png)
+
+**Mobile**: a agenda abre na visão do dia.
+
+<img src="docs/screenshots/mobile-agenda.png" alt="Agenda do dia no celular" width="320">
 
 ## Stack
 
