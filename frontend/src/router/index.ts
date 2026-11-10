@@ -1,21 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { authGuard } from './guards'
+import { routes } from './routes'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    { path: '/', redirect: '/design-system' },
-    {
-      // Temporary route: visual foundation showcase. Remove once real screens exist.
-      path: '/design-system',
-      name: 'design-system',
-      component: () => import('@/views/DesignSystemView.vue'),
-      meta: { title: 'Componentes' },
-    },
-  ],
+  routes,
+  scrollBehavior: () => ({ top: 0 }),
 })
 
+router.beforeEach(authGuard)
+
 router.afterEach((to) => {
-  const title = typeof to.meta.title === 'string' ? to.meta.title : null
+  const title = [...to.matched].reverse().find((record) => record.meta.title)?.meta.title
   document.title = title ? `${title} · AgendaPro` : 'AgendaPro'
 })
 

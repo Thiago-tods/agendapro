@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import AppLayout from '@/components/layout/AppLayout.vue'
+import AppToast from '@/components/ui/AppToast.vue'
 </script>
 
 <template>
-  <AppLayout>
-    <RouterView />
-  </AppLayout>
+  <RouterView />
+  <AppToast />
 </template>

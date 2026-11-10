@@ -1,0 +1,7 @@
+{
+    "(and :count more error)": "(e mais :count erro)",
+    "(and :count more errors)": "(e mais :count erros)",
+    "This action is unauthorized.": "Você não tem permissão para realizar esta ação.",
+    "Unauthenticated.": "Não autenticado.",
+    "Not Found": "Não encontrado."
+}

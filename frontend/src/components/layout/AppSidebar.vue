@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
+import { useCurrentCompany } from '@/composables/useCurrentCompany'
 
 defineProps<{ collapsed: boolean; mobileOpen: boolean }>()
 defineEmits<{ close: [] }>()
+
+const { companyId } = useCurrentCompany()
 
 interface NavItem {
   label: string
@@ -12,8 +16,23 @@ interface NavItem {
   to?: RouteLocationRaw
 }
 
-const primaryNav: NavItem[] = [
-  { label: 'Painel', icon: 'M4 13h6V4H4v9Zm10 7h6v-9h-6v9ZM4 20h6v-4H4v4Zm10-16v4h6V4h-6Z' },
+const ICONS = {
+  home: 'M4 13h6V4H4v9Zm10 7h6v-9h-6v9ZM4 20h6v-4H4v4Zm10-16v4h6V4h-6Z',
+  settings:
+    'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.4 7.4 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-2-1.2L14.5 3h-5l-.4 2.6a7.5 7.5 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7.4 7.4 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7.5 7.5 0 0 0 2 1.2l.4 2.6h5l.4-2.6a7.5 7.5 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z',
+}
+
+/** Links are scoped to the company in the URL; modules not built yet stay listed as "em breve". */
+const groups = computed<NavItem[][]>(() => {
+  const params = { companyId: companyId.value ?? '' }
+
+  return [
+    [{ label: 'Início', icon: ICONS.home, to: { name: 'company-home', params } }, ...upcomingNav],
+    [{ label: 'Configurações', icon: ICONS.settings, to: { name: 'company-settings', params } }],
+  ]
+})
+
+const upcomingNav: NavItem[] = [
   {
     label: 'Agenda',
     icon: 'M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm3 8h3m-3 4h6',
@@ -25,20 +44,6 @@ const primaryNav: NavItem[] = [
   { label: 'Profissionais', icon: 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 10a7 7 0 0 1 14 0' },
   { label: 'Serviços', icon: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01' },
 ]
-
-const secondaryNav: NavItem[] = [
-  {
-    label: 'Componentes',
-    icon: 'M12 3 3 8l9 5 9-5-9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5',
-    to: { name: 'design-system' },
-  },
-  {
-    label: 'Configurações',
-    icon: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.4 7.4 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-2-1.2L14.5 3h-5l-.4 2.6a7.5 7.5 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7.4 7.4 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7.5 7.5 0 0 0 2 1.2l.4 2.6h5l.4-2.6a7.5 7.5 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z',
-  },
-]
-
-const groups = [primaryNav, secondaryNav]
 
 const itemBase =
   'relative flex h-10 items-center gap-3 rounded-input px-3 text-body font-medium transition-colors duration-150'
@@ -91,27 +96,27 @@ const itemBase =
         :class="{ 'mt-auto border-t border-border pt-5': index === 1 }"
       >
         <li v-for="item in group" :key="item.label">
-          <RouterLink v-if="item.to" v-slot="{ href, navigate, isActive }" :to="item.to" custom>
+          <RouterLink v-if="item.to" v-slot="{ href, navigate, isExactActive }" :to="item.to" custom>
             <a
               :href="href"
-              :aria-current="isActive ? 'page' : undefined"
+              :aria-current="isExactActive ? 'page' : undefined"
               :title="collapsed ? item.label : undefined"
               :class="[
                 itemBase,
-                isActive
+                isExactActive
                   ? 'bg-primary-soft text-text-primary'
                   : 'text-text-secondary hover:bg-elevated hover:text-text-primary',
               ]"
               @click="navigate"
             >
               <span
-                v-if="isActive"
+                v-if="isExactActive"
                 class="absolute inset-y-2 left-0 w-0.5 rounded-full bg-primary-hover"
                 aria-hidden="true"
               />
               <svg
                 class="size-[18px] shrink-0"
-                :class="{ 'text-primary-hover': isActive }"
+                :class="{ 'text-primary-hover': isExactActive }"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"

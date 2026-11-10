@@ -1,0 +1,35 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('company_members', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('company_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('user_id')->constrained()->cascadeOnDelete();
+            $table->string('role', 20);
+            $table->timestamps();
+
+            // A user holds exactly one membership (and role) per company.
+            $table->unique(['company_id', 'user_id']);
+            $table->index('user_id');
+        });
+
+        DB::statement(<<<'SQL'
+            ALTER TABLE company_members
+            ADD CONSTRAINT company_members_role_check
+            CHECK (role IN ('owner', 'admin', 'receptionist', 'professional'))
+        SQL);
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('company_members');
+    }
+};

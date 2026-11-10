@@ -1,7 +1,4 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-Route::get('/', function () {
-    return view('welcome');
-});
+// The SPA lives in frontend/. Web routes only host Sanctum's /sanctum/csrf-cookie,
+// which the package registers automatically.
