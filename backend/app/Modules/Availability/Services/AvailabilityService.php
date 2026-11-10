@@ -57,6 +57,16 @@ class AvailabilityService
         return $this->intersect($companyRanges, $professionalRanges);
     }
 
+    /**
+     * Company-level open ranges on a local date, in minutes since local midnight.
+     *
+     * @return list<array{int, int}>
+     */
+    public function companyRanges(Company $company, CarbonImmutable $localDate): array
+    {
+        return $this->rangesFor($company, null, $localDate) ?? [];
+    }
+
     private function assertWithinSchedule(Company $company, Professional $professional, CarbonImmutable $startsAt, CarbonImmutable $endsAt): void
     {
         $localStart = $startsAt->setTimezone($company->timezone);

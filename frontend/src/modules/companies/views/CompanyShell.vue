@@ -46,19 +46,28 @@ async function logout(): Promise<void> {
       <div v-if="companyOptions.length > 1" class="hidden w-56 sm:block">
         <AppSelect v-model="selectedCompany" label="Empresa" hide-label :options="companyOptions" />
       </div>
-      <span v-else-if="company" class="hidden truncate text-label text-text-secondary sm:block">{{ company.name }}</span>
+      <span v-else-if="company" class="hidden truncate text-label text-text-secondary sm:block">{{
+        company.name
+      }}</span>
 
       <div class="flex items-center gap-2 border-l border-border pl-3">
-        <span
-          class="flex size-8 items-center justify-center rounded-full bg-elevated text-support font-semibold text-text-secondary"
-          aria-hidden="true"
+        <RouterLink
+          :to="{ name: 'profile', params: { companyId: company?.id } }"
+          class="flex items-center gap-2 rounded-input p-1 pr-2 transition-colors duration-150 hover:bg-elevated"
+          title="Meu perfil"
         >
-          {{ initials }}
-        </span>
-        <div class="hidden min-w-0 leading-tight md:block">
-          <p class="truncate text-label font-medium">{{ auth.user?.name }}</p>
-          <p class="truncate text-support text-text-muted">{{ company?.membership?.role_label }}</p>
-        </div>
+          <span class="sr-only md:hidden">Meu perfil</span>
+          <span
+            class="flex size-8 items-center justify-center rounded-full bg-elevated text-support font-semibold text-text-secondary"
+            aria-hidden="true"
+          >
+            {{ initials }}
+          </span>
+          <span class="hidden min-w-0 leading-tight md:block">
+            <span class="block truncate text-label font-medium">{{ auth.user?.name }}</span>
+            <span class="block truncate text-support text-text-muted">{{ company?.membership?.role_label }}</span>
+          </span>
+        </RouterLink>
         <button
           type="button"
           class="ml-1 inline-flex h-8 items-center rounded-input px-2.5 text-label font-medium text-text-secondary transition-colors duration-150 hover:bg-elevated hover:text-text-primary disabled:opacity-50"
@@ -70,6 +79,7 @@ async function logout(): Promise<void> {
       </div>
     </template>
 
-    <RouterView v-if="company" />
+    <!-- Keyed by company: switching companies remounts the page so no data from the previous one survives. -->
+    <RouterView v-if="company" :key="company.id" />
   </AppLayout>
 </template>

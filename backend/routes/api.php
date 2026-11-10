@@ -2,7 +2,9 @@
 
 use App\Modules\Appointments\Http\Controllers\AppointmentController;
 use App\Modules\Auth\Http\Controllers\AuthController;
+use App\Modules\Auth\Http\Controllers\ProfileController;
 use App\Modules\Availability\Http\Controllers\AvailabilityController;
+use App\Modules\Availability\Http\Controllers\CalendarAvailabilityController;
 use App\Modules\Companies\Http\Controllers\CompanyController;
 use App\Modules\Companies\Http\Controllers\CompanyMemberController;
 use App\Modules\Customers\Http\Controllers\CustomerController;
@@ -21,6 +23,10 @@ Route::post('/auth/login', [AuthController::class, 'login'])->name('api.v1.auth.
 Route::middleware('auth:sanctum')->name('api.v1.')->group(function (): void {
     Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
     Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
+    Route::patch('/auth/profile', [ProfileController::class, 'update'])->name('auth.profile');
+    Route::put('/auth/password', [ProfileController::class, 'updatePassword'])
+        ->middleware('throttle:6,1')
+        ->name('auth.password');
 
     Route::get('/companies', [CompanyController::class, 'index'])->name('companies.index');
 
@@ -35,6 +41,7 @@ Route::middleware('auth:sanctum')->name('api.v1.')->group(function (): void {
             Route::patch('/', [CompanyController::class, 'update'])->name('companies.update');
 
             Route::get('/members', [CompanyMemberController::class, 'index'])->name('companies.members.index');
+            Route::post('/members', [CompanyMemberController::class, 'store'])->name('companies.members.store');
             Route::patch('/members/{member}', [CompanyMemberController::class, 'update'])->name('companies.members.update');
             Route::delete('/members/{member}', [CompanyMemberController::class, 'destroy'])->name('companies.members.destroy');
 
@@ -46,6 +53,7 @@ Route::middleware('auth:sanctum')->name('api.v1.')->group(function (): void {
             Route::apiResource('services', ServiceController::class);
 
             Route::get('/dashboard', DashboardController::class)->name('dashboard');
+            Route::get('/calendar/availability', CalendarAvailabilityController::class)->name('calendar.availability');
 
             // Availability
             Route::controller(AvailabilityController::class)->group(function (): void {

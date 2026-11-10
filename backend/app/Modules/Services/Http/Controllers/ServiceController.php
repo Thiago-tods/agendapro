@@ -37,7 +37,10 @@ class ServiceController
 
         $services = $company->services()
             ->withCount('professionals')
-            ->when($search !== '', fn ($q) => $q->where('name', 'ilike', '%'.addcslashes($search, '%_\\').'%'))
+            ->when($search !== '', function ($q) use ($search): void {
+                $like = '%'.addcslashes($search, '%_\\').'%';
+                $q->where(fn ($w) => $w->where('name', 'ilike', $like)->orWhere('category', 'ilike', $like));
+            })
             ->when($filters['category'] ?? null, fn ($q, string $category) => $q->where('category', $category))
             ->when($status !== 'all', fn ($q) => $q->where('is_active', $status === 'active'))
             ->when(

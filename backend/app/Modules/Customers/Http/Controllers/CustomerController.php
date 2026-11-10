@@ -30,6 +30,7 @@ class CustomerController
         $status = $filters['status'] ?? 'active';
 
         $customers = $company->customers()
+            ->withVisitStats()
             ->search($filters['search'] ?? null)
             ->when($status === 'active', fn ($q) => $q->whereNull('archived_at'))
             ->when($status === 'archived', fn ($q) => $q->whereNotNull('archived_at'))
@@ -52,7 +53,7 @@ class CustomerController
     {
         Gate::authorize('view', $customer);
 
-        return new CustomerResource($customer);
+        return new CustomerResource($customer->loadVisitStats());
     }
 
     public function update(SaveCustomerRequest $request, Company $company, Customer $customer): CustomerResource

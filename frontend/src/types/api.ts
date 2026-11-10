@@ -64,6 +64,23 @@ export interface Appointment {
   professional?: { id: string; name: string; color: string }
   service: { id: string; name: string; price_cents: number; duration_minutes: number; buffer_minutes: number }
   notes: string | null
+  checked_in_at?: string | null
+  completed_at?: string | null
+  cancelled_at?: string | null
+  cancellation_reason?: string | null
+  events?: AppointmentEvent[]
+}
+
+export interface AppointmentEvent {
+  id: string
+  type: string
+  label: string
+  from_status: AppointmentStatus | null
+  to_status: AppointmentStatus | null
+  reason: string | null
+  changes: Record<string, unknown> | null
+  actor: { id: string; name: string } | null
+  created_at: string
 }
 
 export interface CustomerSummary {
@@ -94,4 +111,50 @@ export interface ServiceSummary {
 export interface SessionPayload {
   user: AuthUser
   companies: Company[]
+}
+
+export interface Customer extends CustomerSummary {
+  birth_date: string | null
+  notes: string | null
+  is_archived: boolean
+  archived_at: string | null
+  visits_count?: number
+  last_visit_at?: string | null
+  next_appointment_at?: string | null
+  created_at: string
+}
+
+export interface Professional extends ProfessionalSummary {
+  title: string | null
+  bio: string | null
+  email: string | null
+  phone: string | null
+  services_count?: number
+  services?: Array<{ id: string; name: string; color: string; is_active: boolean }>
+}
+
+export interface Service extends ServiceSummary {
+  description: string | null
+  professionals_count?: number
+  professionals?: ProfessionalSummary[]
+}
+
+export interface WeeklyPeriod {
+  weekday: number
+  start_time: string
+  end_time: string
+}
+
+export interface WeeklyHours {
+  timezone: string
+  uses_company_hours: boolean
+  periods: WeeklyPeriod[]
+}
+
+export interface CompanyMember {
+  id: string
+  role: CompanyRole
+  role_label: string
+  user: AuthUser
+  joined_at: string
 }

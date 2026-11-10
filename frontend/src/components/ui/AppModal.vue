@@ -7,7 +7,16 @@ import { onBeforeUnmount, ref, useId, watch } from 'vue'
  */
 const open = defineModel<boolean>('open', { required: true })
 
-defineProps<{ title: string; description?: string }>()
+withDefaults(
+  defineProps<{
+    title: string
+    description?: string
+    placement?: 'center' | 'side'
+  }>(),
+  {
+    placement: 'center',
+  },
+)
 
 const dialog = ref<HTMLDialogElement | null>(null)
 const titleId = useId()
@@ -38,7 +47,12 @@ onBeforeUnmount(() => dialog.value?.open && dialog.value.close())
   <dialog
     ref="dialog"
     :aria-labelledby="titleId"
-    class="m-0 h-dvh max-h-none w-full max-w-none border-border bg-card p-0 text-text-primary backdrop:bg-black/60 sm:m-auto sm:h-auto sm:max-h-[calc(100dvh-48px)] sm:w-[560px] sm:rounded-modal sm:border"
+    class="m-0 h-dvh max-h-none w-full max-w-none border-border bg-card p-0 text-text-primary backdrop:bg-black/60"
+    :class="
+      placement === 'side'
+        ? 'sm:ml-auto sm:w-[440px] sm:border-l'
+        : 'sm:m-auto sm:h-auto sm:max-h-[calc(100dvh-48px)] sm:w-[560px] sm:rounded-modal sm:border'
+    "
     @close="onClose"
     @click="onBackdropClick"
   >
@@ -46,7 +60,9 @@ onBeforeUnmount(() => dialog.value?.open && dialog.value.close())
       <header class="flex items-start justify-between gap-4 border-b border-border px-6 py-4">
         <div>
           <h2 :id="titleId" class="text-section-title">{{ title }}</h2>
-          <p v-if="description" class="mt-0.5 text-label text-text-muted">{{ description }}</p>
+          <p v-if="description" class="mt-0.5 text-label text-text-muted">
+            {{ description }}
+          </p>
         </div>
         <button
           type="button"
@@ -54,7 +70,15 @@ onBeforeUnmount(() => dialog.value?.open && dialog.value.close())
           aria-label="Fechar"
           @click="open = false"
         >
-          <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <svg
+            class="size-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
         </button>

@@ -16,12 +16,23 @@ import type { CustomerSummary, ProfessionalSummary, ServiceSummary } from '@/typ
  * are validated by the API in the booking transaction, and its messages are shown as-is.
  */
 const open = defineModel<boolean>('open', { required: true })
+const props = defineProps<{
+  /** Prefill from a calendar slot. The professional applies once a service they perform is chosen. */
+  initial?: { date: string; time: string; professionalId?: string } | null
+}>()
 const emit = defineEmits<{ created: [] }>()
 
 const { company } = useCurrentCompany()
 const toast = useToast()
 
-const form = reactive({ serviceId: '', professionalId: '', customerId: '', date: '', time: '', notes: '' })
+const form = reactive({
+  serviceId: '',
+  professionalId: '',
+  customerId: '',
+  date: '',
+  time: '',
+  notes: '',
+})
 const services = ref<ServiceSummary[]>([])
 const professionals = ref<ProfessionalSummary[]>([])
 const customers = ref<CustomerSummary[]>([])
@@ -36,15 +47,31 @@ const selectedService = computed(() => services.value.find((s) => s.id === form.
 
 const serviceOptions = computed(() => [
   { value: '', label: 'Selecione o serviço' },
-  ...services.value.map((s) => ({ value: s.id, label: `${s.name} · ${s.duration_minutes} min · ${formatCurrency(s.price_cents)}` })),
+  ...services.value.map((s) => ({
+    value: s.id,
+    label: `${s.name} · ${s.duration_minutes} min · ${formatCurrency(s.price_cents)}`,
+  })),
 ])
 const professionalOptions = computed(() => [
-  { value: '', label: form.serviceId ? (professionals.value.length ? 'Selecione o profissional' : 'Nenhum profissional realiza este serviço') : 'Escolha o serviço primeiro' },
+  {
+    value: '',
+    label: form.serviceId
+      ? professionals.value.length
+        ? 'Selecione o profissional'
+        : 'Nenhum profissional realiza este serviço'
+      : 'Escolha o serviço primeiro',
+  },
   ...professionals.value.map((p) => ({ value: p.id, label: p.name })),
 ])
 const customerOptions = computed(() => [
-  { value: '', label: customers.value.length ? 'Selecione o cliente' : 'Nenhum cliente encontrado' },
-  ...customers.value.map((c) => ({ value: c.id, label: c.phone ? `${c.name} · ${c.phone}` : c.name })),
+  {
+    value: '',
+    label: customers.value.length ? 'Selecione o cliente' : 'Nenhum cliente encontrado',
+  },
+  ...customers.value.map((c) => ({
+    value: c.id,
+    label: c.phone ? `${c.name} · ${c.phone}` : c.name,
+  })),
 ])
 
 const canSubmit = computed(
@@ -55,7 +82,14 @@ const canSubmit = computed(
 const generalError = computed(() => (error.value && !error.value.isValidation ? error.value.message : null))
 
 function resetForm(): void {
-  Object.assign(form, { serviceId: '', professionalId: '', customerId: '', date: todayIn(timezone.value), time: '', notes: '' })
+  Object.assign(form, {
+    serviceId: '',
+    professionalId: '',
+    customerId: '',
+    date: props.initial?.date ?? todayIn(timezone.value),
+    time: props.initial?.time ?? '',
+    notes: '',
+  })
   customerSearch.value = ''
   professionals.value = []
   error.value = null
@@ -91,7 +125,9 @@ watch(
     professionals.value = []
     if (!serviceId || !company.value) return
     professionals.value = await bookingApi.professionalsFor(company.value.id, serviceId).catch(() => [])
-    if (professionals.value.length === 1) form.professionalId = professionals.value[0]?.id ?? ''
+    const preferred = professionals.value.find((p) => p.id === props.initial?.professionalId)
+    if (preferred) form.professionalId = preferred.id
+    else if (professionals.value.length === 1) form.professionalId = professionals.value[0]?.id ?? ''
   },
 )
 
@@ -139,7 +175,11 @@ async function submit(): Promise<void> {
 
 <template>
   <AppModal v-model:open="open" title="Novo agendamento" :description="`Horários no fuso ${timezone}.`">
-    <div v-if="optionsError" class="rounded-input border border-danger/40 bg-danger/10 px-3 py-2.5 text-body text-danger" role="alert">
+    <div
+      v-if="optionsError"
+      class="rounded-input border border-danger/40 bg-danger/10 px-3 py-2.5 text-body text-danger"
+      role="alert"
+    >
       {{ optionsError }}
       <AppButton class="mt-2" size="sm" variant="secondary" @click="loadInitialOptions">Tentar novamente</AppButton>
     </div>
@@ -151,7 +191,11 @@ async function submit(): Promise<void> {
         :options="serviceOptions"
         :disabled="loadingOptions"
         :error="error?.field('service_id')"
-        :hint="selectedService && selectedService.buffer_minutes ? `Inclui ${selectedService.buffer_minutes} min de intervalo após o atendimento.` : undefined"
+        :hint="
+          selectedService && selectedService.buffer_minutes
+            ? `Inclui ${selectedService.buffer_minutes} min de intervalo após o atendimento.`
+            : undefined
+        "
       />
 
       <AppSelect
@@ -163,7 +207,12 @@ async function submit(): Promise<void> {
       />
 
       <div class="flex flex-col gap-2">
-        <AppInput v-model="customerSearch" label="Cliente" type="search" placeholder="Buscar por nome, e-mail ou telefone" />
+        <AppInput
+          v-model="customerSearch"
+          label="Cliente"
+          type="search"
+          placeholder="Buscar por nome, e-mail ou telefone"
+        />
         <AppSelect
           v-model="form.customerId"
           label="Cliente selecionado"
@@ -178,11 +227,17 @@ async function submit(): Promise<void> {
         <AppInput v-model="form.date" label="Data" type="date" :min="todayIn(timezone)" required />
         <AppInput v-model="form.time" label="Horário" type="time" :step="300" required />
       </div>
-      <p v-if="error?.field('starts_at')" class="-mt-3 text-support text-danger" role="alert">{{ error.field('starts_at') }}</p>
+      <p v-if="error?.field('starts_at')" class="-mt-3 text-support text-danger" role="alert">
+        {{ error.field('starts_at') }}
+      </p>
 
       <AppInput v-model="form.notes" label="Observações" placeholder="Opcional" :error="error?.field('notes')" />
 
-      <p v-if="generalError" class="rounded-input border border-danger/40 bg-danger/10 px-3 py-2.5 text-body text-danger" role="alert">
+      <p
+        v-if="generalError"
+        class="rounded-input border border-danger/40 bg-danger/10 px-3 py-2.5 text-body text-danger"
+        role="alert"
+      >
         {{ generalError }}
       </p>
     </form>

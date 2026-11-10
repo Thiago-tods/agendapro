@@ -2,6 +2,7 @@
 
 namespace App\Modules\Customers\Models;
 
+use App\Modules\Appointments\Enums\AppointmentStatus;
 use App\Modules\Appointments\Models\Appointment;
 use App\Modules\Companies\Models\Company;
 use App\Modules\Customers\Policies\CustomerPolicy;
@@ -71,6 +72,29 @@ class Customer extends Model
      *
      * @param  Builder<self>  $query
      */
+    /** Adds visits_count, last_visit_at (completed) and next_appointment_at (active, future). */
+    public function scopeWithVisitStats(Builder $query): void
+    {
+        $completed = AppointmentStatus::Completed->value;
+        $active = [AppointmentStatus::Scheduled->value, AppointmentStatus::Confirmed->value, AppointmentStatus::CheckedIn->value];
+
+        $query->select('customers.*')
+            ->withCount(['appointments as visits_count' => fn ($q) => $q->where('status', $completed)])
+            ->withMax(['appointments as last_visit_at' => fn ($q) => $q->where('status', $completed)], 'starts_at')
+            ->withMin(['appointments as next_appointment_at' => fn ($q) => $q->whereIn('status', $active)->where('starts_at', '>=', now()->utc())], 'starts_at');
+    }
+
+    public function loadVisitStats(): static
+    {
+        $stats = static::query()->withVisitStats()->whereKey($this->getKey())->first();
+
+        foreach (['visits_count', 'last_visit_at', 'next_appointment_at'] as $key) {
+            $this->setAttribute($key, $stats?->getAttribute($key));
+        }
+
+        return $this;
+    }
+
     public function scopeSearch(Builder $query, ?string $term): void
     {
         $term = trim((string) $term);

@@ -8,6 +8,7 @@ import { useCurrentCompany } from '@/composables/useCurrentCompany'
 import { useToast } from '@/composables/useToast'
 import { companiesApi } from '@/modules/companies/api'
 import { BRAZIL_TIMEZONES } from '@/modules/companies/timezones'
+import SettingsTabs from '@/modules/settings/components/SettingsTabs.vue'
 import { isApiError, type ApiError } from '@/services/http'
 import { useAuthStore } from '@/stores/auth'
 
@@ -46,7 +47,10 @@ async function save(): Promise<void> {
   error.value = null
 
   try {
-    const updated = await companiesApi.update(company.value.id, { name: form.name.trim(), timezone: form.timezone })
+    const updated = await companiesApi.update(company.value.id, {
+      name: form.name.trim(),
+      timezone: form.timezone,
+    })
     auth.replaceCompany(updated)
     reset()
     toast.success('Dados da empresa atualizados.')
@@ -61,11 +65,12 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <div class="flex flex-col gap-8">
+  <div class="flex flex-col gap-6">
     <header>
       <p class="text-label text-text-muted">Configurações</p>
       <h1 class="mt-1 text-page-title">Dados da empresa</h1>
     </header>
+    <SettingsTabs />
 
     <AppCard
       title="Informações gerais"
