@@ -70,39 +70,25 @@ watch(
 
 const status = computed<AppointmentStatus | null>(() => appointment.value?.status ?? null)
 const canManage = computed(() => can('manage_appointments'))
-const hasStarted = computed(() => !!appointment.value && new Date(appointment.value.starts_at).getTime() <= Date.now())
+/** Actions come from the API (state + time rules live there); the role decides visibility. */
+const allowed = computed(() => new Set(canManage.value ? (appointment.value?.available_actions ?? []) : []))
 
 const actions = computed(() => {
   const s = status.value
-  if (!canManage.value || !s) return []
   const list: {
     key: 'confirm' | 'check-in' | 'complete' | 'no-show'
     label: string
     variant: 'primary' | 'secondary'
   }[] = []
-  if (s === 'scheduled') list.push({ key: 'confirm', label: 'Confirmar', variant: 'primary' })
-  if (s === 'scheduled' || s === 'confirmed')
-    list.push({
-      key: 'check-in',
-      label: 'Fazer check-in',
-      variant: s === 'confirmed' ? 'primary' : 'secondary',
-    })
-  if (s === 'checked_in')
-    list.push({
-      key: 'complete',
-      label: 'Concluir atendimento',
-      variant: 'primary',
-    })
-  if ((s === 'scheduled' || s === 'confirmed') && hasStarted.value)
-    list.push({
-      key: 'no-show',
-      label: 'Não compareceu',
-      variant: 'secondary',
-    })
+  if (allowed.value.has('confirm')) list.push({ key: 'confirm', label: 'Confirmar', variant: 'primary' })
+  if (allowed.value.has('check_in'))
+    list.push({ key: 'check-in', label: 'Fazer check-in', variant: s === 'confirmed' ? 'primary' : 'secondary' })
+  if (allowed.value.has('complete')) list.push({ key: 'complete', label: 'Concluir atendimento', variant: 'primary' })
+  if (allowed.value.has('no_show')) list.push({ key: 'no-show', label: 'Não compareceu', variant: 'secondary' })
   return list
 })
-const canReschedule = computed(() => canManage.value && (status.value === 'scheduled' || status.value === 'confirmed'))
-const canCancel = canReschedule
+const canReschedule = computed(() => allowed.value.has('reschedule'))
+const canCancel = computed(() => allowed.value.has('cancel'))
 
 const SUCCESS: Record<string, string> = {
   confirm: 'Agendamento confirmado.',

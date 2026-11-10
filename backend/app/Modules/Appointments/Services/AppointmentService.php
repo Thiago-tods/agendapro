@@ -32,8 +32,6 @@ class AppointmentService
     private const PAST_TOLERANCE_MINUTES = 5;
 
     /** Check-in opens this many minutes before the start time. */
-    private const CHECK_IN_WINDOW_MINUTES = 120;
-
     public function __construct(private readonly AvailabilityService $availability) {}
 
     /**
@@ -139,20 +137,13 @@ class AppointmentService
             $appointment = $this->lockAppointment($appointment);
             $from = $appointment->status;
 
-            if (! $from->canTransitionTo($target)) {
-                $this->fail('status', "Não é possível passar de \"{$from->label()}\" para \"{$target->label()}\".");
+            $now = CarbonImmutable::now();
+
+            if (($blocker = $appointment->transitionBlocker($target, $now)) !== null) {
+                $this->fail('status', $blocker);
             }
 
-            $now = CarbonImmutable::now();
             $attributes = ['status' => $target];
-
-            match ($target) {
-                AppointmentStatus::CheckedIn => $this->assertCheckInWindow($appointment, $now),
-                AppointmentStatus::NoShow => $now->lessThan($appointment->starts_at)
-                    ? $this->fail('status', 'Só é possível registrar o não comparecimento após o horário de início.')
-                    : null,
-                default => null,
-            };
 
             if ($target === AppointmentStatus::CheckedIn) {
                 $attributes['checked_in_at'] = $now;
@@ -231,17 +222,6 @@ class AppointmentService
         $endsAt = $startsAt->addMinutes($durationMinutes);
 
         return [$endsAt, $endsAt->addMinutes($bufferMinutes)];
-    }
-
-    private function assertCheckInWindow(Appointment $appointment, CarbonImmutable $now): void
-    {
-        if ($now->lessThan($appointment->starts_at->subMinutes(self::CHECK_IN_WINDOW_MINUTES))) {
-            $this->fail('status', 'O check-in só pode ser feito a partir de 2 horas antes do início.');
-        }
-
-        if ($now->greaterThanOrEqualTo($appointment->occupied_until)) {
-            $this->fail('status', 'O horário deste agendamento já terminou. Registre como não comparecimento.');
-        }
     }
 
     /** @param  array<string, mixed>|null  $changes */

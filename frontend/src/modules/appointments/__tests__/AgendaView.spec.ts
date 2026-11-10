@@ -60,6 +60,7 @@ function appointment(overrides: Partial<Appointment> = {}): Appointment {
     },
     notes: null,
     events: [],
+    available_actions: ['confirm', 'cancel', 'reschedule'],
     ...overrides,
   }
 }
@@ -281,6 +282,17 @@ describe('AgendaView', () => {
       time: '09:00',
       professionalId: 'p1',
     })
+  })
+
+  it('shows only the actions the API allows now', async () => {
+    vi.mocked(bookingApi.get).mockResolvedValue(appointment({ status: 'confirmed', available_actions: ['check_in', 'cancel', 'reschedule'] }))
+    const { wrapper } = await mountAgenda()
+
+    await wrapper.find('button[aria-label*="Maria Oliveira"]').trigger('click')
+    await flushPromises()
+    expect(button(wrapper, 'Fazer check-in')).toBeDefined()
+    expect(button(wrapper, 'Não compareceu')).toBeUndefined()
+    expect(button(wrapper, 'Confirmar')).toBeUndefined()
   })
 
   it('hides booking and actions from roles that cannot manage appointments', async () => {

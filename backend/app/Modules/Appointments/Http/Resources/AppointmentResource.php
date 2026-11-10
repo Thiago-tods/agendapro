@@ -5,6 +5,7 @@ namespace App\Modules\Appointments\Http\Resources;
 use App\Modules\Appointments\Models\Appointment;
 use App\Modules\Appointments\Models\AppointmentEvent;
 use App\Modules\Companies\Support\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -55,6 +56,8 @@ class AppointmentResource extends JsonResource
                 'buffer_minutes' => $this->service_buffer_minutes,
             ],
             'notes' => $this->notes,
+            // What the state and the clock allow now; the SPA shows only these (permissions apart).
+            'available_actions' => $this->availableActions(CarbonImmutable::now()),
             'checked_in_at' => $this->checked_in_at?->toIso8601ZuluString(),
             'completed_at' => $this->completed_at?->toIso8601ZuluString(),
             'cancelled_at' => $this->cancelled_at?->toIso8601ZuluString(),

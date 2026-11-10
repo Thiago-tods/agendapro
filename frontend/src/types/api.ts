@@ -52,6 +52,8 @@ export interface Paginated<T> {
 
 export type AppointmentStatus = 'scheduled' | 'confirmed' | 'checked_in' | 'completed' | 'cancelled' | 'no_show'
 
+export type AppointmentAction = 'confirm' | 'check_in' | 'complete' | 'no_show' | 'cancel' | 'reschedule'
+
 export interface Appointment {
   id: string
   status: AppointmentStatus
@@ -64,6 +66,8 @@ export interface Appointment {
   professional?: { id: string; name: string; color: string }
   service: { id: string; name: string; price_cents: number; duration_minutes: number; buffer_minutes: number }
   notes: string | null
+  /** What the current state and time allow, computed by the API. */
+  available_actions?: AppointmentAction[]
   checked_in_at?: string | null
   completed_at?: string | null
   cancelled_at?: string | null

@@ -8,6 +8,7 @@ use App\Modules\Companies\Enums\CompanyRole;
 use App\Modules\Professionals\Models\Professional;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\Concerns\BuildsSchedule;
 use Tests\TestCase;
 
@@ -72,6 +73,19 @@ class CalendarAvailabilityTest extends TestCase
 
         $one = $this->getJson($this->url("from=2026-11-16&to=2026-11-16&professional_ids[]={$other->id}"))->json('data.days.0.professionals');
         $this->assertSame([$other->id], array_keys($one));
+    }
+
+    public function test_query_count_does_not_grow_with_days_or_professionals(): void
+    {
+        Professional::factory()->count(5)->for($this->company)->create();
+
+        DB::enableQueryLog();
+        $this->getJson($this->url('from=2026-11-01&to=2026-12-12'))->assertOk(); // 42 days, 6+ professionals
+        $queries = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        // Auth, tenant and authorization lookups plus a fixed number of data queries.
+        $this->assertLessThan(20, $queries);
     }
 
     public function test_validates_range_and_isolates_companies(): void

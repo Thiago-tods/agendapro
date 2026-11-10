@@ -43,6 +43,9 @@ class CalendarAvailabilityController
             ->orderBy('name')
             ->get();
 
+        // Two queries for the whole range instead of several per day and professional.
+        $availability->preload($company, $from, $to);
+
         $days = [];
         for ($day = $from; $day->lessThanOrEqualTo($to); $day = $day->addDay()) {
             $days[] = [

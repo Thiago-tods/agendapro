@@ -144,6 +144,22 @@ class AppointmentLifecycleTest extends TestCase
 
     // --- Check-in, completion, no-show --------------------------------------------------
 
+    public function test_available_actions_follow_the_same_rules_as_the_transitions(): void
+    {
+        $actions = fn (): array => $this->getJson($this->companyUrl("/appointments/{$this->id}"))->json('data.available_actions');
+
+        // Days before: no check-in nor no-show yet.
+        $this->assertEqualsCanonicalizing(['confirm', 'cancel', 'reschedule'], $actions());
+
+        $this->travelToLocal(self::MONDAY.' 08:00'); // inside the 2-hour window
+        $this->assertEqualsCanonicalizing(['confirm', 'check_in', 'cancel', 'reschedule'], $actions());
+
+        $this->travelToLocal(self::MONDAY.' 10:30'); // after the start
+        $this->assertEqualsCanonicalizing(['confirm', 'check_in', 'no_show', 'cancel', 'reschedule'], $actions());
+
+        $this->act('check-in')->assertOk()->assertJsonPath('data.available_actions', ['complete']);
+    }
+
     public function test_check_in_window_and_completion(): void
     {
         $this->act('complete')->assertJsonValidationErrors('status'); // must check in first

@@ -129,4 +129,53 @@ class Appointment extends Model
     {
         throw new \LogicException('Appointments are never deleted. Cancel them instead.');
     }
+
+    public const CHECK_IN_WINDOW_MINUTES = 120;
+
+    /**
+     * Why moving to $target is not allowed at $now, or null when it is. Single source for the
+     * status rules: AppointmentService enforces it and the API exposes it as available actions.
+     */
+    public function transitionBlocker(AppointmentStatus $target, CarbonImmutable $now): ?string
+    {
+        if (! $this->status->canTransitionTo($target)) {
+            return "Não é possível passar de \"{$this->status->label()}\" para \"{$target->label()}\".";
+        }
+
+        return match ($target) {
+            AppointmentStatus::CheckedIn => match (true) {
+                $now->lessThan($this->starts_at->subMinutes(self::CHECK_IN_WINDOW_MINUTES)) => 'O check-in só pode ser feito a partir de 2 horas antes do início.',
+                $now->greaterThanOrEqualTo($this->occupied_until) => 'O horário deste agendamento já terminou. Registre como não comparecimento.',
+                default => null,
+            },
+            AppointmentStatus::NoShow => $now->lessThan($this->starts_at)
+                ? 'Só é possível registrar o não comparecimento após o horário de início.'
+                : null,
+            default => null,
+        };
+    }
+
+    /**
+     * Actions the current state and time allow (permissions are checked separately).
+     *
+     * @return list<string>
+     */
+    public function availableActions(CarbonImmutable $now): array
+    {
+        $actions = [
+            'confirm' => AppointmentStatus::Confirmed,
+            'check_in' => AppointmentStatus::CheckedIn,
+            'complete' => AppointmentStatus::Completed,
+            'no_show' => AppointmentStatus::NoShow,
+            'cancel' => AppointmentStatus::Cancelled,
+        ];
+
+        $available = array_keys(array_filter($actions, fn (AppointmentStatus $target): bool => $this->transitionBlocker($target, $now) === null));
+
+        if ($this->status->isReschedulable()) {
+            $available[] = 'reschedule';
+        }
+
+        return $available;
+    }
 }

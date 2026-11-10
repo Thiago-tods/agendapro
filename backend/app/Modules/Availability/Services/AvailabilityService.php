@@ -9,6 +9,7 @@ use App\Modules\Availability\Models\WorkingHour;
 use App\Modules\Companies\Models\Company;
 use App\Modules\Professionals\Models\Professional;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -27,6 +28,37 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
  */
 class AvailabilityService
 {
+    /**
+     * Schedule rows preloaded for a date range (see preload()), so the calendar can resolve many
+     * days and professionals without one query per day. Null when nothing is preloaded.
+     *
+     * @var array{company: string, from: string, to: string, hours: Collection<string, Collection<int, WorkingHour>>, exceptions: Collection<string, Collection<int, AvailabilityException>>}|null
+     */
+    private ?array $preloaded = null;
+
+    /**
+     * Loads weekly hours and date exceptions of the company for [from, to] (local dates) in two
+     * queries. Later calls to openRanges()/companyRanges() inside that range use this data;
+     * the rules applied are exactly the same.
+     */
+    public function preload(Company $company, CarbonImmutable $from, CarbonImmutable $to): void
+    {
+        $key = fn (?string $professionalId): string => $professionalId ?? 'company';
+
+        $this->preloaded = [
+            'company' => $company->id,
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+            'hours' => WorkingHour::query()->where('company_id', $company->id)->get()
+                ->groupBy(fn (WorkingHour $h): string => $key($h->professional_id)),
+            'exceptions' => AvailabilityException::query()
+                ->where('company_id', $company->id)
+                ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+                ->get()
+                ->groupBy(fn (AvailabilityException $e): string => $key($e->professional_id).'|'.$e->date->toDateString()),
+        ];
+    }
+
     /**
      * @throws ValidationException when outside working hours or inside a blocked period (422)
      * @throws ConflictHttpException when another appointment occupies the interval (409)
@@ -125,11 +157,43 @@ class AvailabilityService
      */
     private function rangesFor(Company $company, ?string $professionalId, CarbonImmutable $localDate): ?array
     {
+        $date = $localDate->toDateString();
+        $cache = $this->preloaded;
+
+        if ($cache !== null && $cache['company'] === $company->id && $date >= $cache['from'] && $date <= $cache['to']) {
+            $level = $professionalId ?? 'company';
+
+            return $this->resolve(
+                $cache['exceptions']->get("{$level}|{$date}", new Collection),
+                $cache['hours']->get($level, new Collection),
+                $professionalId,
+                $localDate,
+            );
+        }
+
         $exceptions = AvailabilityException::query()
             ->where('company_id', $company->id)
             ->where('professional_id', $professionalId)
-            ->whereDate('date', $localDate->toDateString())
+            ->whereDate('date', $date)
             ->get();
+
+        $weekly = WorkingHour::query()
+            ->where('company_id', $company->id)
+            ->where('professional_id', $professionalId)
+            ->get();
+
+        return $this->resolve($exceptions, $weekly, $professionalId, $localDate);
+    }
+
+    /**
+     * The resolution rules for one level on one date (see the class comment).
+     *
+     * @param  Collection<int, AvailabilityException>  $exceptions  that level's exceptions on that date
+     * @param  Collection<int, WorkingHour>  $weekly  all of that level's weekly hours
+     * @return list<array{int, int}>|null
+     */
+    private function resolve(Collection $exceptions, Collection $weekly, ?string $professionalId, CarbonImmutable $localDate): ?array
+    {
 
         if ($exceptions->isNotEmpty()) {
             if ($exceptions->contains('is_closed', true)) {
@@ -141,15 +205,11 @@ class AvailabilityService
             ])->all());
         }
 
-        $weekly = WorkingHour::query()
-            ->where('company_id', $company->id)
-            ->where('professional_id', $professionalId);
-
-        if ($professionalId !== null && ! (clone $weekly)->exists()) {
+        if ($professionalId !== null && $weekly->isEmpty()) {
             return null;
         }
 
-        return $this->normalize($weekly->where('weekday', $localDate->dayOfWeek)->get()
+        return $this->normalize($weekly->where('weekday', $localDate->dayOfWeek)->values()
             ->map(fn (WorkingHour $h): array => [$this->toMinutes($h->start_time), $this->toMinutes($h->end_time)])
             ->all());
     }
